@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pillow Executor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    body {
+      margin: 0;
+      background: #121217;
+      color: #ddd;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      user-select: none;
+    }
+
+    img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.1));
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 2rem;
+      margin-bottom: 0.25em;
+    }
+
+    p {
+      font-weight: 400;
+      font-size: 1rem;
+      margin-bottom: 1.5em;
+      color: #a0a0a0;
+      text-align: center;
+      max-width: 280px;
+      white-space: pre-line; /* allow \n line breaks */
+    }
+
+    .claim {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #7a7a7a;
+      margin-bottom: 2em;
+      font-style: italic;
+      text-align: center;
+      max-width: 280px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      width: 280px;
+      gap: 1.25em;
+      margin-bottom: 1.5em;
+    }
+
+    input[type="text"] {
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #1a1a24;
+      color: #eee;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: #5a5af0;
+      outline: none;
+      background: #22222d;
+    }
+
+    button,
+    input[type="button"],
+    input[type="submit"] {
+      padding: 12px 0;
+      border-radius: 6px;
+      border: none;
+      background: #5a5af0;
+      color: #eee;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover,
+    input[type="button"]:hover,
+    input[type="submit"]:hover {
+      background: #4848cc;
+    }
+
+    #submitKeyInfo {
+      color: #fff;
+      height: 1.2em;
+      margin-bottom: 1.5em;
+      text-align: center;
+      visibility: hidden;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 12px;
+      font-size: 0.75rem;
+      color: #444;
+      user-select: none;
+      width: 100%;
+      text-align: center;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .header img {
+      width: 80px;
+      height: 80px;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.1));
+      margin: 0;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 2rem;
+      color: #ddd;
+    }
+
+    nav {
+      width: 280px;
+      margin-bottom: 1.5em;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    nav button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      min-width: 0;
+      background: #2a2a36;
+      color: #aaa;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 12px 40px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    nav button.active,
+    nav button:hover {
+      background: #5a5af0;
+      color: #eee;
+    }
+
+    #licenseDetailsContent {
+      display: none;
+      width: 280px;
+      color: #bbb;
+      font-size: 0.9rem;
+      margin-bottom: 1.5em;
+      text-align: center;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <img src="pillow2.png" alt="Pillow" />
+    <h1>Pillow</h1>
+  </div>
+
+  <form autocomplete="on" id="submitKeyForm">
+    <div class="form-group">
+      <input type="text" placeholder="License key" id="licenseKey" autocomplete="on" />
+      <input type="submit" id="submitKey" value="Activate" />
+    </div>
+    <p id="submitKeyInfo">Invalid key!</p>
+  </form>
+
+  <nav id="menu" style="display:none;">
+    <button id="menuHome" class="active">Home</button>
+    <button id="menuDownload">Download</button>
+    <button id="menuLicense">License Details</button>
+    <button id="menuAbout">About</button>
+  </nav>
+
+  <p id="pageText" style="display:none;">The coziest of them all!</p>
+  <div class="claim" id="claimText" style="display:none;">100% sUNC, and undetected</div>
+
+  <div id="licenseDetailsContent">
+    <p id="licenseDurationLbl">Time left: 0d 0h 0m 0s</p>
+    <p id="latestUpdateLbl">Latest update: version-############</p>
+  </div>
+
+  <footer>© 2021 Pillow Executor</footer>
+
+  <script>
+    ((a) => {
+      if (a !== "pillowexecutor") return null;
+      const submitKeyInfo = document.getElementById("submitKeyInfo");
+      const submitKeyForm = document.getElementById("submitKeyForm");
+      const licenseKeyText = document.getElementById("licenseKey");
+      const menu = document.getElementById("menu");
+      const pageText = document.getElementById("pageText");
+      const claimText = document.getElementById("claimText");
+      const licenseDetailsContent = document.getElementById("licenseDetailsContent");
+      const menuHome = document.getElementById("menuHome");
+      const menuDownload = document.getElementById("menuDownload");
+      const menuAbout = document.getElementById("menuAbout");
+      const menuLicense = document.getElementById("menuLicense");
+      const licenseDurationLbl = document.getElementById("licenseDurationLbl");
+      const latestUpdateLbl = document.getElementById("latestUpdateLbl");
+      let license = "";
+
+      const changeKeyInfoLabel = (text, color) => {
+        submitKeyInfo.textContent = text;
+        if (text.trim() === "") {
+          submitKeyInfo.style.visibility = "hidden";
+        } else {
+          submitKeyInfo.style.color = color || "#fff";
+          submitKeyInfo.style.visibility = "visible";
+        }
+      };
+
+      function setActive(button) {
+        [menuHome, menuDownload, menuAbout, menuLicense].forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+      }
+
+      menuHome.onclick = () => {
+        setActive(menuHome);
+        pageText.style.display = "block";
+        claimText.style.display = "block";
+        licenseDetailsContent.style.display = "none";
+        pageText.textContent = "The coziest of them all!";
+        claimText.textContent = "100% sUNC, and undetected";
+      };
+
+      menuDownload.onclick = () => {
+        setActive(menuDownload);
+        pageText.style.display = "block";
+        claimText.style.display = "none";
+        licenseDetailsContent.style.display = "none";
+        pageText.innerHTML = `<button onclick="window.open('https://raw.githubusercontent.com/Selirix/pillow/refs/heads/main/pillow.exe', '_blank')">Download Pillow</button>`;
+      };
+
+      menuAbout.onclick = () => {
+        setActive(menuAbout);
+        pageText.style.display = "block";
+        claimText.style.display = "block";
+        licenseDetailsContent.style.display = "none";
+        pageText.textContent = "Pillow Executor v2.3.7";
+        claimText.textContent = "Made by Selirix";
+      };
+
+      function secondsToReadable(seconds) {
+        const d = Math.floor(seconds / 86400);
+        seconds %= 86400;
+        const h = Math.floor(seconds / 3600);
+        seconds %= 3600;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${d}d ${h}h ${m}m ${s}s`;
+      }
+
+      menuLicense.onclick = async () => {
+        setActive(menuLicense);
+        const currTime = Math.floor(Date.now() / 1000);
+        const latestUpd = await fetch("https://pillow.landyvilla3-99d.workers.dev/licenseInfo?key=" + license);
+        const text = await latestUpd.text();
+        let parsed = {};
+        try {
+          parsed = JSON.parse(text);
+        } catch (err) {
+          console.warn("Could not parse " + text);
+        }
+        latestUpdateLbl.textContent = "Latest Update: " + (parsed.latestUpdate || "");
+        licenseDurationLbl.textContent = "Time left: " + secondsToReadable(parsed.duration || 0) + `\n(checked at ${currTime} UNIX epoch)`;
+        pageText.style.display = "none";
+        claimText.style.display = "none";
+        licenseDetailsContent.style.display = "block";
+      };
+
+      changeKeyInfoLabel("");
+      submitKeyForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const tempKey = licenseKeyText.value;
+        fetch("https://pillow.landyvilla3-99d.workers.dev/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            "key": tempKey
+          })
+        })
+          .then(a => a.status)
+          .then((status) => {
+            if (status == 200) {
+              changeKeyInfoLabel("Correct key", "#45ff45");
+              submitKeyForm.style.display = "none";
+              menu.style.display = "flex";
+              pageText.style.display = "block";
+              claimText.style.display = "block";
+              licenseDetailsContent.style.display = "none";
+              menuHome.click();
+              license = tempKey;
+            } else {
+              changeKeyInfoLabel("Incorrect key", "#ff4545");
+            }
+          });
+      });
+    })("pillowexecutor");
+  </script>
+</body>
+
+</html>
